@@ -83,14 +83,6 @@ $staplesmigrationtool.controls.AddRange(@($TextBox1,$TextBox2,$browse,$brow,$can
 
 #################################################################################################################
 
-
-
-#################################################################################################################
-
-#Write-Host Source: $source
-#Write-Host Destination: $destination
-#pause
-
 $browse.Add_Click({
     $folder = New-Object System.Windows.Forms.FolderBrowserDialog
 	$folder.ShowDialog()
@@ -110,8 +102,8 @@ $cancel.Add_Click({
 $start.Add_Click({
     $sourceSize = "{0:N2}" -f ((Get-ChildItem -path $TextBox1.Text -recurse | Measure-Object -property length -sum ).sum /1MB) + " MB"
     Write-Host $sourceSize
-
-})
+    
+    $s = $TextBox1.Text    $d = $TextBox2.Text    $f = Split-Path (Split-Path $s -Leaf) -Leaf    Write-Host Source: $s    Write-Host Destination: $d    Write-Host Folder: $f    Start-Process PowerShell -Verb RunAs "-Command robocopy $s $d\$f /e /xj /eta /r:1 /w:0 /zb /efsraw /log:$d\CopyLog-$f.txt /np /tee; pause;"})
 
 
 $staplesmigrationtool.ShowDialog() | Out-Null
