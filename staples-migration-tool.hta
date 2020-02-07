@@ -1,0 +1,131 @@
+<html>
+    <head>
+        <!--
+        @tag hta:application
+
+        @attribute ApplicationName	Sets the name of the HTA.
+
+        @attribute Border			[Thick]|Thin|None
+        @attribute BorderStyle		[Normal]|Raised|Sunken|Complex|Static
+        @attribute Caption			[Yes]|No
+        @attribute ContextMenu		[Yes]|No
+        @attribute Icon				Path/To/Icon.ico
+        @attribute MaximizeButton	[Yes]|No
+        @attribute MinimizeButton	[Yes]|No
+        @attribute Navigable		[Yes]|No
+        @attribute Scroll			[Auto]|Yes|No
+        @attribute Selection		[Yes]|No
+        @attribute ShowInTaskbar	[Yes]|No
+        @attribute SingleInstance	[Yes]|No
+        @attribute SysMenu			[Yes]|No (Setting to No will remove close button)
+        @attribute WindowsState		[Normal]|Minimize|Maximize
+        -->
+        <hta:application
+            ID="smt"
+            ApplicationName="Staples Migration Tool"
+            Scroll="Yes"
+        >
+
+        <title>Staples Migration Tool</title>
+
+        <style type="text/css">
+            body { 
+                font-size: 11pt;
+                font-family: "Segoe UI", Calibri, Arial, Sans-Serif;
+            }
+        </style>
+
+    </head>
+
+    <script language="VBScript">
+
+        ' Set window size '
+        window.resizeTo 800, 400
+
+        ' Folder names '
+        Dim sourceFolder
+        Dim destinationFolder
+
+        ' If toolkit is not running with elevated permissions, self elevate '
+        If HTAElevate() = True Then 
+            ' Self Elevate '
+        End If 
+
+        Function HTAElevate() 
+
+            Const Elev = " /elevated" 
+            HTAElevate = True 
+
+            If InStr( LCase( smt.commandLine ), Elev) > 0 then Exit Function 
+
+            On Error Resume Next 
+                window.resizeTo width, height
+            On Error GoTo 0 
+
+            createobject("Shell.Application").ShellExecute "mshta.exe", smt.commandLine & Elev, "", "runas", 1 
+
+            HTAElevate = False      
+            self.close 
+            
+        End Function    
+
+        Function browseForSource()
+            '@description: Browse for folder dialog.
+            '@author: Jeremy England (SimplyCoded)
+            Dim oFolder
+            Set oFolder = CreateObject("Shell.Application").BrowseForFolder(0,"Select a Folder",0,0)
+            If (oFolder Is Nothing) Then
+                BrowseForFolder = Empty
+            Else 
+                BrowseForFolder = oFolder.Self.Path
+                source.Value = BrowseForFolder
+                sourceFolder = oFolder.Self
+            End If
+        End Function
+
+        Function browseForDestination()
+            '@description: Browse for folder dialog.
+            '@author: Jeremy England (SimplyCoded)
+            Dim oFolder
+            Set oFolder = CreateObject("Shell.Application").BrowseForFolder(0,"Select a Folder",0,0)
+            If (oFolder Is Nothing) Then
+                BrowseForFolder = Empty
+            Else 
+                BrowseForFolder = oFolder.Self.Path
+                destination.Value = BrowseForFolder
+                destinationFolder = oFolder.Self
+            End If
+        End Function
+
+        Sub startCopy()
+            Set objShell = CreateObject("Wscript.Shell")
+
+            Dim copy
+            Dim echo
+            copy = "robocopy " & Chr(34) & source.Value & Chr(34) & " " & Chr(34) & destination.Value & Chr(34) & " /e /xj /eta /r:1 /w:0 /zb /efsraw /v /xf desktop.ini /log:" & Chr(34) & destination.Value & "\CopyLog-" & destinationFolder &  ".txt" & Chr(34) & " /np /tee"
+
+            ' Testing Runs '
+            ' echo = "echo Source: " & sourceFolder & " // Destination: " & destinationFolder '
+            ' objShell.Run "cmd.exe /c " & echo & " && pause" '
+            objShell.Run "cmd.exe /c echo " & copy & " && pause" '
+
+            objShell.Run "PowerShell.exe -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command " & copy & "; cmd.exe /c pause"
+        End Sub
+
+    </script>
+
+    <body>
+
+        <p>Source:</p>
+        <input type="text" name="source" id="source" size="75" value="Enter or browse for source">
+        <input type="button" name="browseSource" id="browseSource" value="Browse" onclick="browseForSource">
+
+        <p>Destination:</p>
+        <input type="text" name="destination" id="destination" size="75" value="Enter or browse for destination">
+        <input type="button" name="browseDestination" id="browseDestination" value="Browse" onclick="browseForDestination">
+
+        <br /><br />
+        <input type="button" name="start" id="start" value="Start" onclick="startCopy">
+
+    </body>
+</html>
