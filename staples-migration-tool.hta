@@ -102,10 +102,12 @@
 
             Dim copy
             Dim echo
-            copy = "robocopy " & Chr(34) & source.Value & "." & Chr(34) & " " & Chr(34) & destination.Value & "\" & sourceFolder & "." & Chr(34) & " /e /xj /eta /r:1 /w:0 /zb /efsraw /v /xf desktop.ini /log:" & Chr(34) & destination.Value & "\CopyLog-" & sourceFolder &  ".txt" & Chr(34) & " /np /tee"
 
-            Replace(copy,":","")
+            sourceFolder = Replace(sourceFolder,":","")
+            destinationFolder = Replace(destinationFolder,":","")
 
+            copy = "robocopy " & Chr(34) & source.Value & "." & Chr(34) & " " & Chr(34) & destination.Value & "\" & sourceFolder & "." & Chr(34) & " /e /xj /eta /r:1 /w:0 /zb /efsraw /a-:h /v /xf desktop.ini /log:" & Chr(34) & destination.Value & "\CopyLog-" & sourceFolder &  ".txt" & Chr(34) & " /np /tee"
+            
             ' Testing Runs '
             ' echo = "echo Source: " & sourceFolder & " // Destination: " & destinationFolder '
             ' objShell.Run "cmd.exe /c " & echo & " && pause" '
