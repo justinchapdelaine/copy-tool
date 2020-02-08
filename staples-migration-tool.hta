@@ -102,14 +102,17 @@
 
             Dim copy
             Dim echo
-            copy = "robocopy " & Chr(34) & source.Value & Chr(34) & " " & Chr(34) & destination.Value & Chr(34) & " /e /xj /eta /r:1 /w:0 /zb /efsraw /v /xf desktop.ini /log:" & Chr(34) & destination.Value & "\CopyLog-" & destinationFolder &  ".txt" & Chr(34) & " /np /tee"
+            copy = "robocopy " & Chr(34) & source.Value & "." & Chr(34) & " " & Chr(34) & destination.Value & "\" & sourceFolder & "." & Chr(34) & " /e /xj /eta /r:1 /w:0 /zb /efsraw /v /xf desktop.ini /log:" & Chr(34) & destination.Value & "\CopyLog-" & sourceFolder &  ".txt" & Chr(34) & " /np /tee"
+
+            Replace(copy,":","")
 
             ' Testing Runs '
             ' echo = "echo Source: " & sourceFolder & " // Destination: " & destinationFolder '
             ' objShell.Run "cmd.exe /c " & echo & " && pause" '
-            objShell.Run "cmd.exe /c echo " & copy & " && pause" '
+            ' objShell.Run "cmd.exe /c echo " & copy & " && pause" '
 
-            objShell.Run "PowerShell.exe -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command " & copy & "; cmd.exe /c pause"
+            objShell.Run "cmd.exe /c " & copy & " & echo Copied all data from " & source.Value & " to " & destination.Value & " & echo A log has been saved to " & destination.Value & "\CopyLog-" & sourceFolder & ".txt" & " & echo. & pause"
+            ' objShell.Run "PowerShell.exe -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command " & copy & "; cmd.exe /c pause" '
         End Sub
 
     </script>
