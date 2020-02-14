@@ -21,8 +21,8 @@
         @attribute WindowsState		[Normal]|Minimize|Maximize
         -->
         <hta:application
-            ID="smt"
-            ApplicationName="Staples Migration Tool"
+            ID="ct"
+            ApplicationName="Copy Tool"
             Icon=""
             Scroll="Yes"
         >
@@ -32,7 +32,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=8" />
         <meta name="description" content="Tool to copy data using Windows built in robocopy.">
 
-        <title>Staples Migration Tool</title>
+        <title>Copy Tool</title>
 
         <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/pure-min.css" integrity="sha384-oAOxQR6DkCoMliIh8yFnu25d7Eq/PHS21PClpwjOTeU2jRSq11vu66rf90/cZr47" crossorigin="anonymous">
         
@@ -64,13 +64,13 @@
             Const Elev = " /elevated" 
             HTAElevate = True 
 
-            If InStr( LCase( smt.commandLine ), Elev) > 0 then Exit Function 
+            If InStr( LCase( ct.commandLine ), Elev) > 0 then Exit Function 
 
             On Error Resume Next 
                 window.resizeTo width, height
             On Error GoTo 0 
 
-            createobject("Shell.Application").ShellExecute "mshta.exe", smt.commandLine & Elev, "", "runas", 1 
+            createobject("Shell.Application").ShellExecute "mshta.exe", ct.commandLine & Elev, "", "runas", 1 
 
             HTAElevate = False      
             self.close 
