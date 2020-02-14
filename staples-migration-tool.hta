@@ -23,24 +23,32 @@
         <hta:application
             ID="smt"
             ApplicationName="Staples Migration Tool"
+            Icon=""
             Scroll="Yes"
         >
 
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="X-UA-Compatible" content="IE=8" />
+        <meta name="description" content="Tool to copy data using Windows built in robocopy.">
+
         <title>Staples Migration Tool</title>
 
-        <style type="text/css">
-            body { 
-                font-size: 11pt;
-                font-family: "Segoe UI", Calibri, Arial, Sans-Serif;
-            }
-        </style>
+        <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/pure-min.css" integrity="sha384-oAOxQR6DkCoMliIh8yFnu25d7Eq/PHS21PClpwjOTeU2jRSq11vu66rf90/cZr47" crossorigin="anonymous">
+        
+        <!--[if lte IE 8]>
+            <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/grids-responsive-old-ie-min.css">
+        <![endif]-->
+        <!--[if gt IE 8]><!-->
+            <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/grids-responsive-min.css">
+        <!--<![endif]-->
 
     </head>
 
     <script language="VBScript">
 
         ' Set window size '
-        window.resizeTo 800, 400
+        window.resizeTo 900, 450
 
         ' Folder names '
         Dim sourceFolder
@@ -97,6 +105,18 @@
             End If
         End Function
 
+        Function sizeOfSource()
+            Set objShell = CreateObject("Wscript.Shell")
+
+            Dim copy, tempDestination
+            tempDestination = "C:\STS"
+
+            copy = "robocopy " & Chr(34) & source.Value & "." & Chr(34) & " " & Chr(34) & tempDestination & "." & Chr(34) & " /e /xj /eta /r:1 /w:0 /zb /efsraw /v /xf desktop.ini /np /njh /ndl /nc /ns /nfl /l"
+
+            objShell.Run "cmd.exe /c " & copy & " & echo See the toal size above & echo. & pause"
+
+        End Function
+
         Sub startCopy()
             Set objShell = CreateObject("Wscript.Shell")
 
@@ -119,18 +139,42 @@
 
     </script>
 
-    <body>
+    <body style="padding:25px;">
 
-        <p>Source:</p>
-        <input type="text" name="source" id="source" size="75" value="Enter or browse for source">
-        <input type="button" name="browseSource" id="browseSource" value="Browse" onclick="browseForSource">
+        <form class="pure-form">
+            <fieldset>
+                <legend>Source</legend>
+            </fieldset>
+        </form>
 
-        <p>Destination:</p>
-        <input type="text" name="destination" id="destination" size="75" value="Enter or browse for destination">
-        <input type="button" name="browseDestination" id="browseDestination" value="Browse" onclick="browseForDestination">
+        <div class="pure-form">
+            <div class="pure-u-1-1">
+                <input class="pure-input-2-3" type="text" name="source" id="source" value="Enter or browse for source...">
+                <button class="pure-button" name="browseSource" id="browseSource" onclick="browseForSource">Browse</button>
+                <button class="pure-button" name="sizeSource" id="sizeSource" onclick="sizeOfSource">Source Size</button>
+            </div>
+        </div>
 
-        <br /><br />
-        <input type="button" name="start" id="start" value="Start" onclick="startCopy">
+        <br />
+
+        <form class="pure-form">
+            <fieldset>
+                <legend>Destination</legend>
+            </fieldset>
+        </form>
+
+        <div class="pure-form">
+            <div class="pure-u-1-1">
+                <input class="pure-input-2-3" type="text" name="destination" id="destination" value="Enter or browse for destination...">
+                <button class="pure-button" name="browseDestination" id="browseDestination" onclick="browseForDestination">Browse</button>
+            </div>
+        </div>
+
+        <br />
+
+        <div class="pure-g">
+            <div class="pure-u-1-1"><button class="pure-button pure-button-primary" name="start" id="start" onclick="startCopy">Start Copy</button></div>
+        </div>
 
     </body>
 </html>
