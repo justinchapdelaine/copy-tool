@@ -48,7 +48,7 @@
     <script language="VBScript">
 
         ' Set window size '
-        window.resizeTo 900, 450
+        window.resizeTo 900, 475
 
         ' Folder names '
         Dim sourceFolder
@@ -122,6 +122,15 @@
 
             Dim copy
             Dim echo
+           
+            if sourceFolder = "" Then
+                Dim splitPath
+
+                sourceFolder = source.Value
+                splitPath = Split(sourceFolder, chr(92))
+
+                objShell.Run "cmd.exe /c echo There are " & (UBound(split)+1) & " words in the array && pause"
+            End if
 
             sourceFolder = Replace(sourceFolder,":","")
             destinationFolder = Replace(destinationFolder,":","")
@@ -139,8 +148,16 @@
 
     </script>
 
-    <body style="padding:25px;">
+    <body style="padding:0px 25px 0px 25px;">
 
+        <!-- Heading -->
+        <div class="pure-menu pure-menu-horizontal">
+            <div class="pure-menu-heading" style="color: rgb(202, 60, 60); padding:0px;"><h2>Copy Tool</h2></div>
+            <div class="pure-menu-item" style="color: rgb(128,128,128); padding:0px;"><p>|</p></div>
+            <div class="pure-menu-item" style="color: rgb(128,128,128); padding:0px;"><p>utilizing the built-in robocopy command</p></div>
+        </div>
+
+        <!-- Get Source -->
         <form class="pure-form">
             <fieldset>
                 <legend>Source</legend>
@@ -149,7 +166,7 @@
 
         <div class="pure-form">
             <div class="pure-u-1-1">
-                <input class="pure-input-2-3" type="text" name="source" id="source" value="Enter or browse for source...">
+                <input class="pure-input-2-3" type="text" name="source" id="source" style="color: rgb(128,128,128)" value="Enter or browse for source...">
                 <button class="pure-button" name="browseSource" id="browseSource" onclick="browseForSource">Browse</button>
                 <button class="pure-button" name="sizeSource" id="sizeSource" onclick="sizeOfSource">Source Size</button>
             </div>
@@ -157,6 +174,7 @@
 
         <br />
 
+        <!-- Get destination -->
         <form class="pure-form">
             <fieldset>
                 <legend>Destination</legend>
@@ -165,16 +183,25 @@
 
         <div class="pure-form">
             <div class="pure-u-1-1">
-                <input class="pure-input-2-3" type="text" name="destination" id="destination" value="Enter or browse for destination...">
+                <input class="pure-input-2-3" type="text" name="destination" id="destination" style="color: rgb(128,128,128)" value="Enter or browse for destination...">
                 <button class="pure-button" name="browseDestination" id="browseDestination" onclick="browseForDestination">Browse</button>
             </div>
         </div>
 
         <br />
 
+        <!-- Start copying -->
         <div class="pure-g">
             <div class="pure-u-1-1"><button class="pure-button pure-button-primary" name="start" id="start" onclick="startCopy">Start Copy</button></div>
         </div>
+
+        <!-- Link to GitHub -->
+        <div class="footer" style="color: rgb(211,211,211); font-size: .75em; text-align: center; padding: 0px; margin: auto">
+            <div class="pure-menu pure-menu-horizontal">
+                    <li class="pure-menu-item"><a href="https://github.com/justinchapdelaine/copy-tool" class="pure-menu-link" style="padding: 0px;">Found a bug or have a suggestion? Head on over to the GitHub!</a></li>
+            </div>
+        </div>
+
 
     </body>
 </html>
