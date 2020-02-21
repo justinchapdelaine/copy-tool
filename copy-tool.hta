@@ -1,4 +1,16 @@
+<!doctype html>
 <html>
+
+    <!-- 
+    This is a tool to copy data using the built-in Windows robocopy command.
+
+    Author: Justin Chapdelaine
+    Source: https://github.com/justinchapdelaine/copy-tool
+
+    This is a program created with HTAs (HTML Applications). 
+    https://docs.microsoft.com/en-us/previous-versions//ms536496(v=vs.85) 
+    -->
+
     <head>
         <!--
         @tag hta:application
@@ -30,7 +42,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta http-equiv="X-UA-Compatible" content="IE=8" />
-        <meta name="description" content="Tool to copy data using Windows built in robocopy.">
+        <meta name="description" content="Tool to copy data using Windows built-in robocopy command.">
 
         <title>Copy Tool</title>
 
@@ -105,6 +117,7 @@
             End If
         End Function
 
+        ' Determine total size of source folder '
         Function sizeOfSource()
             Set objShell = CreateObject("Wscript.Shell")
 
@@ -113,23 +126,29 @@
 
             copy = "robocopy " & Chr(34) & source.Value & "." & Chr(34) & " " & Chr(34) & tempDestination & "." & Chr(34) & " /e /xj /eta /r:1 /w:0 /zb /efsraw /v /xf desktop.ini /np /njh /ndl /nc /ns /nfl /l"
 
-            objShell.Run "cmd.exe /c " & copy & " & echo See the toal size above & echo. & pause"
-
+            objShell.Run "cmd.exe /c echo Calculating size of the source folder. This may take a few minutes... & " & copy & " & echo See the toal size above & echo. & pause"
         End Function
 
+        ' Copy all data from source to destination using robocopy '
         Sub startCopy()
             Set objShell = CreateObject("Wscript.Shell")
 
             Dim copy
             Dim echo
            
+           ' If the user enters folder path manually then we need to determine the source folder name '
             if sourceFolder = "" Then
-                Dim splitPath
-
+                Dim start
                 sourceFolder = source.Value
-                splitPath = Split(sourceFolder, chr(92))
 
-                objShell.Run "cmd.exe /c echo There are " & (UBound(split)+1) & " words in the array && pause"
+                start = InStrRev(sourceFolder, "\")
+                sourceFolder = Right(sourceFolder, start + 2)
+
+                sourceFolder = Replace(sourceFolder,":","")
+                sourceFolder = Replace(sourceFolder,"\","")
+
+                ' Test folder name output '
+                ' objShell.Run "cmd.exe /c echo " & sourceFolder & " & pause" '
             End if
 
             sourceFolder = Replace(sourceFolder,":","")
@@ -143,7 +162,9 @@
             ' objShell.Run "cmd.exe /c echo " & copy & " && pause" '
 
             objShell.Run "cmd.exe /c " & copy & " & echo Copied all data from " & source.Value & " to " & destination.Value & " & echo A log has been saved to " & destination.Value & "\CopyLog-" & sourceFolder & ".txt" & " & echo. & pause"
-            ' objShell.Run "PowerShell.exe -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command " & copy & "; cmd.exe /c pause" '
+
+            ' Reset source folder to blank for additional copy runs '
+            sourceFolder = ""
         End Sub
 
     </script>
