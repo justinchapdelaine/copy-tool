@@ -3,7 +3,8 @@ A tool to copy data on a Windows machine using the build-in robocopy command.
 
 ## Features
 * Browse for folders through a GUI or manually enter a path. Options wow!
-* Quickly calculate the total size of the source directory. Ohhhhh numbers.
+* Quickly calculate the total size of the source directory. Ohhhhh numbers!
+* A log will be created at the destination directory. Accountability, neat!
 * Available as a standalone HTA application or Executable (the executable may have issues with anti-malware suites).
 
 ## To Use
