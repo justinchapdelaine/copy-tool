@@ -158,7 +158,6 @@
             
             ' Testing Runs '
             ' echo = "echo Source: " & sourceFolder & " // Destination: " & destinationFolder '
-            ' objShell.Run "cmd.exe /c " & echo & " && pause" '
             ' objShell.Run "cmd.exe /c echo " & copy & " && pause" '
 
             objShell.Run "cmd.exe /c " & copy & " & echo Copied all data from " & source.Value & " to " & destination.Value & " & echo A log has been saved to " & destination.Value & "\CopyLog-" & sourceFolder & ".txt" & " & echo. & pause"
