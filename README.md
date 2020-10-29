@@ -14,4 +14,4 @@ A tool to copy data on a Windows machine using the build-in robocopy command.
 4. Press start to begin copying
 
 ## Screenshots
-![screenshot](https://github.com/justinchapdelaine/copy-tool/blob/master/img/screenshot.png?raw=true "screenshot")
+![screenshot](https://github.com/justinchapdelaine/copy-tool/blob/hta-version/img/screenshot.png?raw=true "screenshot")
