@@ -1,187 +1,199 @@
-﻿<# This form was created using POSHGUI.com  a free online gui designer for PowerShell
-.NAME
-    Copy Tool
-.SYNOPSIS
-    Utilizing the build-in robocopy command to copy data with a progress bar
-#>
+﻿function Start-Copy {
 
-Add-Type -AssemblyName System.Windows.Forms
-[System.Windows.Forms.Application]::EnableVisualStyles()
+    # Use the Get-Folder function to select the source and destination folder through a GUI dialog box
+    $Source = Get-Folder("Select source folder");
+    $Destination = Get-Folder ("Select destination folder");
 
-$CopyTool                        = New-Object system.Windows.Forms.Form
-$CopyTool.ClientSize             = New-Object System.Drawing.Point(705,400)
-$CopyTool.text                   = "Copy Tool"
-$CopyTool.TopMost                = $false
+    Write-Verbose -Message ('Source: {0}' -f $Source);
+    Write-Verbose -Message ('Destination: {0}' -f $Destination);
 
-$sourceBox                       = New-Object system.Windows.Forms.TextBox
-$sourceBox.multiline             = $false
-$sourceBox.text                  = "Type or browse for source..."
-$sourceBox.width                 = 450
-$sourceBox.height                = 20
-$sourceBox.location              = New-Object System.Drawing.Point(30,90)
-$sourceBox.Font                  = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
-$destinationBox                  = New-Object system.Windows.Forms.TextBox
-$destinationBox.multiline        = $false
-$destinationBox.text             = "Type or browse for destination..."
-$destinationBox.width            = 450
-$destinationBox.height           = 20
-$destinationBox.location         = New-Object System.Drawing.Point(30,219)
-$destinationBox.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
-$sourceButton                    = New-Object system.Windows.Forms.Button
-$sourceButton.text               = "Browse"
-$sourceButton.width              = 60
-$sourceButton.height             = 30
-$sourceButton.location           = New-Object System.Drawing.Point(503,83)
-$sourceButton.Font               = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
-$destinationButton               = New-Object system.Windows.Forms.Button
-$destinationButton.text          = "Browse"
-$destinationButton.width         = 60
-$destinationButton.height        = 30
-$destinationButton.location      = New-Object System.Drawing.Point(502,215)
-$destinationButton.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
-$startCopy                       = New-Object system.Windows.Forms.Button
-$startCopy.text                  = "Start Copy"
-$startCopy.width                 = 60
-$startCopy.height                = 30
-$startCopy.location              = New-Object System.Drawing.Point(494,333)
-$startCopy.Font                  = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
-$ProgressBar1                    = New-Object system.Windows.Forms.ProgressBar
-$ProgressBar1.width              = 449
-$ProgressBar1.height             = 60
-$ProgressBar1.location           = New-Object System.Drawing.Point(31,314)
-
-$CopyTool.controls.AddRange(@($sourceBox,$destinationBox,$sourceButton,$destinationButton,$startCopy,$ProgressBar1))
-
-# Resize PowerShell window
-$psHost = Get-Host
-$psWindow = $psHost.UI.RawUI
-$psWindow.WindowTitle = "Copy Tool Output"
-
-# Self-elevate script if not running as Administrator
-if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
-    if ([int](Get-CimInstance -Class Win32_OperatingSystem | Select-Object -ExpandProperty BuildNumber) -ge 6000) {
-        $CommandLine = "-File `"" + $MyInvocation.MyCommand.Path + "`" " + $MyInvocation.UnboundArguments
-        Start-Process -FilePath PowerShell.exe -Verb Runas -ArgumentList $CommandLine
-        Exit
+    # When no source or destination is selected inform the user
+    if ($Source -eq "" -OR $Destination -eq "") {
+        Write-Host "No source or destination selected."
+    } else {
+        Copy-WithProgress -Source $Source -Destination $Destination
     }
 }
 
-# Write your logic code here
+function Get-Folder ($DialogMessage) {
+    <#
+    .NAME
+        Get-Folder
+    .SYNOPSIS
+        Returns a folder path.
+    .DESCRIPTION
+        Calls a GUI dialog box to select then return a folder path.
+    .PARAMETER DialogMessage
+        Provide a message to display in the dialog box.
+    #>
 
+    # Import windows forms for a GUI folder selection
+    [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
 
-$startCopy.Add_Click{
-    Copy-WithProgress -Source "C:\Program Files" -Destination "C:\Users\User\Desktop\folder fdss 'fds;"
+    # Store the folder path for returning
+    $FolderPath = ""
+
+    # Display a dialog box to select a source folder
+    $Dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+    $Dialog.Description = $DialogMessage
+    $Dialog.RootFolder = "Desktop"
+
+    # Only write to FolderPath if the OK button is clicked in the dialog window
+    if ($Dialog.ShowDialog() -eq "OK") {
+        $FolderPath = $Dialog.SelectedPath
+    }
+
+    return $FolderPath
 }
 
-#End code
-
-#Functions start
 
 function Copy-WithProgress {
+    
+    <#
+    .NAME
+        Copy-WithProgress
+    .SYNOPSIS
+        Copy a file or directory from a Source to a Destination.
+    .DESCRIPTION
+        Copy a file of direction using the built-in robocopy command from a specified Source to a Destination.
+    .PARAMETER Source
+        The source to be copied.
+    .PARAMETER Destination
+        The destionation to copy to.
+    .PARAMETER Delay
+        The delay between file copies to allow calculations.
+    .PARAMETER ReportDelay
+        The delay between each report to the progress bar.
+    #>
+
     [CmdletBinding()]
     param (
-            [Parameter(Mandatory = $true)]
-            [string] $Source
-        , [Parameter(Mandatory = $true)]
-            [string] $Destination
-        , [int] $Gap = 200
-        , [int] $ReportGap = 2000
+        [Parameter(Mandatory = $true)]
+        [string] $Source
+       ,[Parameter(Mandatory = $true)]
+        [string] $Destination
+       ,[int] $Delay = 200
+       ,[int] $ReportDelay = 2000
     )
-    # Define regular expression that will gather number of bytes copied
+
+    # Regular expression to gather number of bytes copied
     $RegexBytes = '(?<=\s+)\d+(?=\s+)';
 
-    #region Robocopy params
-    # MIR = Mirror mode
-    # NP  = Don't show progress percentage in log
-    # NC  = Don't log file classes (existing, new file, etc.)
-    # BYTES = Show file sizes in bytes
-    # NJH = Do not display robocopy job header (JH)
-    # NJS = Do not display robocopy job summary (JS)
-    # TEE = Display log in stdout AND in target log file
-    $CommonRobocopyParams = '/MIR /NP /NDL /NC /BYTES /NJH /NJS';
+    # Retrieve the source directory name for use in the destination path
+    $SourceFolder = Split-Path -Path $Source -Leaf;
+    $DestinationFolder = $Destination;
+    $Destination = ('{0}\{1}' -f $Destination, $SourceFolder);
+
+    #region Robocopy parameters
+    # /e - Copies subdirectories. This option automatically includes empty directories.
+    # /xj - Excludes junction points, which are normally included by default.
+    # /np - Specifies that the progress of the copying operation (the number of files or directories copied so far) will not be displayed.
+    # /nc - Specifies that file classes are not to be logged.
+    # /ndl - Specifies that directory names are not to be logged.
+    # /bytes - Prints sizes, as bytes.
+    # /njh - Specifies that there is no job header.
+    # /njs - Specifies that there is no job summary.
+    # /tee - Writes the status output to the console window, as well as to the log file.
+    $RobocopyParams = '/e /xj /np /nc /ndl /bytes /njh /njs /r:1 /w:0';
     #endregion Robocopy params
 
-    #region Robocopy Staging
-    Write-Verbose -Message 'Analyzing robocopy job ...';
-    $StagingLogPath = '{0}\temp\{1} robocopy staging.log' -f $env:windir, (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
+    #region Robocopy analysis
+    # Use the built-in RoboCopy command to parse a provided Source to determine the total number of files as will as the total size of the Source using a temporary log
+    Write-Host 'Calculating robocopy job...';
+    $AnalysisLogPath = '{0}\temp\{1} RobocopyAnalysis.log' -f $env:windir, (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
 
-    $StagingArgumentList = '"{0}" "{1}" /LOG:"{2}" /L {3}' -f $Source, $Destination, $StagingLogPath, $CommonRobocopyParams;
-    Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList);
-    Start-Process -Wait -FilePath robocopy.exe -ArgumentList $StagingArgumentList -NoNewWindow;
+    # Parse source with robocopy command
+    $AnalysisArgumentList = '"{0}" "{1}" /log:"{2}" /l {3}' -f $Source, $Destination, $AnalysisLogPath, $RobocopyParams;
+    Start-Process -Wait -FilePath RoboCopy.exe -ArgumentList $AnalysisArgumentList -NoNewWindow;
+
+    # Display provided Source and Destination
+    Write-Host
+    Write-Host ('Source: {0}' -f $Source);
+    Write-Host ('Destination: {0}' -f $Destination);
+
     # Get the total number of files that will be copied
-    $StagingContent = Get-Content -Path $StagingLogPath;
-    $TotalFileCount = $StagingContent.Count - 1;
+    $AnalysisContent = Get-Content -Path $AnalysisLogPath;
+    $TotalFileCount = $AnalysisContent.Count - 1;
+    Write-Host
+    Write-Host ('Total number of files that will be copied: {0}' -f $TotalFileCount);
 
-    # Get the total number of bytes to be copied
-    [RegEx]::Matches(($StagingContent -join "`n"), $RegexBytes) | % { $BytesTotal = 0; } { $BytesTotal += $_.Value; };
-    Write-Verbose -Message ('Total bytes to be copied: {0}' -f $BytesTotal);
-    #endregion Robocopy Staging
+    # Get the total number of bytes that will be copied
+    [RegEx]::Matches(($AnalysisContent -join "`n"), $RegexBytes) | % { $BytesTotal = 0; } { $BytesTotal += $_.Value; };
+    $GigabytesTotal = [math]::Round($BytesTotal/1073741824,3);
+    Write-Host ('Total number of Gigabytes that will be copied: {0} GB' -f $GigabytesTotal);
+    #endregion Robocopy analysis
 
-    #region Start Robocopy
-    # Begin the robocopy process
-    $RobocopyLogPath = '{0}\temp\{1} robocopy.log' -f $env:windir, (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
-    $ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $Source, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams;
-    Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList);
-    $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow;
+    #region Robocopy transfer
+    # Use the built-in Robocopy command to transfer all files from the provided Source to the provided Destination
+
+    # Create a log file in the Windows Temp directory
+    $RobocopyLogPath = '{0}\CopyLog-{1} {2}.log' -f $DestinationFolder, $SourceFolder , (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
+    # Configure argument list for use when running the RoboCopy command
+    $RobocopyArgumentList = '"{0}" "{1}" /log:"{2}" /ipg:{3} {4}' -f $Source, $Destination, $RobocopyLogPath, $Delay, $RobocopyParams;
+
+    # Begin RoboCopy transfer from the provided Source to the provided Destination
+    Write-Host
+    Write-Verbose -Message ('Beginning the robocopy process with the arguments: {0}' -f $RobocopyArgumentList);
+    $RobocopyTransfer = Start-Process -FilePath RoboCopy.exe -ArgumentList $RobocopyArgumentList -PassThru -NoNewWindow;
     Start-Sleep -Milliseconds 100;
-    #endregion Start Robocopy
+    #endregion Robocopy transfer
 
-    #region Progress bar loop
-    while (!$Robocopy.HasExited) {
-        Start-Sleep -Milliseconds $ReportGap;
+    #region Progress bar
+    # Display a progress bar in the powershell window to visually show how far along the RoboCopy transfer is
+
+    # Loop the progress bar until the RoboCopy transfer is complete
+    while (!$RobocopyTransfer.HasExited) {
+        Start-Sleep -Milliseconds $ReportDelay
         $BytesCopied = 0;
-        $LogContent = Get-Content -Path $RobocopyLogPath;
-        $BytesCopied = [Regex]::Matches($LogContent, $RegexBytes) | ForEach-Object -Process { $BytesCopied += $_.Value; } -End { $BytesCopied; };
-        $CopiedFileCount = $LogContent.Count - 1;
+        $TransferLogContent = Get-Content -Path $RobocopyLogPath;
+        $BytesCopied = [Regex]::Matches($TransferLogContent, $RegexBytes) | ForEach-Object -Process { $BytesCopied += $_.Value; } -End { $BytesCopied; };
+        $CopiedFileCount = $TransferLogContent.Count - 1;
+
+        # Write how much data and how many files have been copied so far
         Write-Verbose -Message ('Bytes copied: {0}' -f $BytesCopied);
-        Write-Verbose -Message ('Files copied: {0}' -f $LogContent.Count);
+        Write-Verbose -Message ('Files copied: {0}' -f $TransferLogContent.Count);
+
+        # Calculate the percentage transferred so far
         $Percentage = 0;
         if ($BytesCopied -gt 0) {
-           $Percentage = (($BytesCopied/$BytesTotal)*100)
+            $Percentage = (($BytesCopied/$BytesTotal)*100)
         }
-        Write-Progress -Activity Robocopy -Status ("Copied: {0} of {1} files | Copied: {2} of {3} GB | Percent complete: {4}%" -f $CopiedFileCount, $TotalFileCount, [math]::Round(($BytesCopied/1073741824),2), [math]::Round(($BytesTotal/1073741824),2), [math]::Round($Percentage,2)) -PercentComplete $Percentage
+
+        # Convert bytes to gigabytes
+        $GigabytesCopied = [math]::Round(($BytesCopied/1073741824),3);
+
+        # Display progress bar
+        Write-Progress -Activity RobocopyTransfer -Status ("Copied: {0} of {1} files | Copied: {2} of {3} GB | Percent complete: {4}%" -f $CopiedFileCount, $TotalFileCount, $GigabytesCopied, $GigabytesTotal, [math]::Round($Percentage,2)) -PercentComplete $Percentage
     }
-    Write-Progress -Activity Robocopy -Status "Ready" -Completed
-    #endregion Progress loop
-
-    #region Function output
-    #[PSCustomObject]@{
-    #    BytesCopied = $BytesCopied;
-    #    FilesCopied = $CopiedFileCount;
-    #};
-    #endregion Function output
     
-    #region Function output
+    # Display progress bar as complete
+    Write-Progress -Activity RobocopyTransfer -Status "Ready" -Completed
+    #endregion Progress bar
 
-    # Format data for presentation
-    $BytesCopied = [math]::Round(($BytesCopied/1073741824),2)
-    $BytesTotal = [math]::Round(($BytesTotal/1073741824),2)
+    #region Function summary
+    # Clear currently displayed progress bar and display a summary of the RoboCopy transfer
 
-
-    # Display summary
     Clear-Host
-    if ($Percentage -gt 1) {
-        Write-Host "Done copying!"
+
+    # Only display summary if files are actually transferred
+    if ($Percentage -gt 0.1) {
+        Write-Host "Done transfering all files!"
         Write-Host
-        Write-Host "Summary:"
-        Write-Host "Number of files:" $CopiedFileCount "of" $TotalFileCount
-        Write-Host "Gigabytes of data:" $BytesCopied "of" $BytesTotal
-  
+        Write-Host ('Source: {0}' -f $Source);
+        Write-Host ('Destination: {0}' -f $Destination);
+        Write-Host
+        Write-Host ('Number of files: {0} of {1}' -f $CopiedFileCount, $TotalFileCount);
+        Write-Host ('Gigabytes of data: {0} of {1}' -f $GigabytesCopied, $GigabytesTotal);
+
+    # If files are not transferred refer user to the logs
     } else {
         Write-Host "All files are most likely already at the destination, please check the log for details"
     }
+
     Write-Host
-    Write-Host "Check the log at ... for further details"
-    #endregion Function output
+    Write-Host ('Check the log at {0} for further details' -f $RobocopyLogPath);
+    #endregion Function summary
+
 }
- 
-#Functions end
 
-
-#End of script
-[void]$CopyTool.ShowDialog()
+# End of script
