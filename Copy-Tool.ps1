@@ -36,7 +36,7 @@ function Get-Folder ($DialogMessage) {
     # Display a dialog box to select a source folder
     $Dialog = New-Object System.Windows.Forms.FolderBrowserDialog
     $Dialog.Description = $DialogMessage
-    $Dialog.RootFolder = "Desktop"
+    $Dialog.RootFolder = "MyComputer"
 
     # Only write to FolderPath if the OK button is clicked in the dialog window
     if ($Dialog.ShowDialog() -eq "OK") {
